@@ -9,6 +9,7 @@ import com.lab.reservation.mapper.DeviceMapper;
 import com.lab.reservation.mapper.ReservationMapper;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -21,8 +22,8 @@ public class ReservationService {
         this.deviceMapper = deviceMapper;
     }
 
-    public List<ReservationResponse> findAll() {
-        return reservationMapper.findAllWithDevice();
+    public List<ReservationResponse> search(Integer deviceId, LocalDate date) {
+        return reservationMapper.searchWithDevice(deviceId, date);
     }
 
     public ReservationResponse findById(Integer id) {

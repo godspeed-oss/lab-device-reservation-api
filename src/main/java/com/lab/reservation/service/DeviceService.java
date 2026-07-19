@@ -16,8 +16,8 @@ public class DeviceService {
         this.deviceMapper = deviceMapper;
     }
 
-    public List<Device> findAll() {
-        return deviceMapper.findAll();
+    public List<Device> search(String keyword, String status) {
+        return deviceMapper.search(keyword, status);
     }
 
     public Device findById(Integer id) {

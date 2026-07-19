@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -23,8 +24,10 @@ public class DeviceController {
     }
 
     @GetMapping("/devices")
-    public Result<List<Device>> findAll() {
-        return Result.success(deviceService.findAll());
+    public Result<List<Device>> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status) {
+        return Result.success(deviceService.search(keyword, status));
     }
 
     @GetMapping("/devices/{id}")

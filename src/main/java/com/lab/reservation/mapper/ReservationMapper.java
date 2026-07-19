@@ -6,13 +6,16 @@ import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Mapper
 public interface ReservationMapper {
     @Select("""
+            <script>
             SELECT
                 r.id,
                 r.device_id,
@@ -24,9 +27,17 @@ public interface ReservationMapper {
                 r.end_time
             FROM reservation r
             JOIN device d ON r.device_id = d.id
+            WHERE 1 = 1
+            <if test="deviceId != null">
+                AND r.device_id = #{deviceId}
+            </if>
+            <if test="date != null">
+                AND r.reservation_date = #{date}
+            </if>
             ORDER BY r.id
+            </script>
             """)
-    List<ReservationResponse> findAllWithDevice();
+    List<ReservationResponse> searchWithDevice(@Param("deviceId") Integer deviceId, @Param("date") LocalDate date);
 
     @Select("""
             SELECT
