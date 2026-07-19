@@ -1,6 +1,8 @@
 package com.lab.reservation.exception;
 
 import com.lab.reservation.common.Result;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -8,17 +10,23 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
-    public Result<Void> handleBusinessException(BusinessException exception) {
-        return Result.fail(exception.getMessage());
+    public ResponseEntity<Result<Void>> handleBusinessException(BusinessException exception) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Result.fail(exception.getMessage()));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public Result<Void> handleHttpMessageNotReadableException(HttpMessageNotReadableException exception) {
-        return Result.fail("Invalid request body");
+    public ResponseEntity<Result<Void>> handleHttpMessageNotReadableException(HttpMessageNotReadableException exception) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Result.fail("Invalid request body"));
     }
 
     @ExceptionHandler(Exception.class)
-    public Result<Void> handleException(Exception exception) {
-        return Result.fail("System error");
+    public ResponseEntity<Result<Void>> handleException(Exception exception) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Result.fail("System error"));
     }
 }
