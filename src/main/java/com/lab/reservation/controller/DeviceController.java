@@ -1,6 +1,7 @@
 package com.lab.reservation.controller;
 
 import com.lab.reservation.common.Result;
+import com.lab.reservation.dto.DeviceRequest;
 import com.lab.reservation.entity.Device;
 import com.lab.reservation.service.DeviceService;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,40 +29,22 @@ public class DeviceController {
 
     @GetMapping("/devices/{id}")
     public Result<Device> findById(@PathVariable Integer id) {
-        Device device = deviceService.findById(id);
-
-        if (device == null) {
-            return Result.fail("Device not found");
-        }
-
-        return Result.success(device);
+        return Result.success(deviceService.findById(id));
     }
 
     @PostMapping("/devices")
-    public Result<Device> add(@RequestBody Device device) {
-        Device savedDevice = deviceService.add(device);
-        return Result.success(savedDevice);
+    public Result<Device> add(@RequestBody DeviceRequest request) {
+        return Result.success(deviceService.add(request));
     }
 
     @PutMapping("/devices/{id}")
-    public Result<Device> update(@PathVariable Integer id, @RequestBody Device device) {
-        Device updatedDevice = deviceService.update(id, device);
-
-        if (updatedDevice == null) {
-            return Result.fail("Device not found");
-        }
-
-        return Result.success(updatedDevice);
+    public Result<Device> update(@PathVariable Integer id, @RequestBody DeviceRequest request) {
+        return Result.success(deviceService.update(id, request));
     }
 
     @DeleteMapping("/devices/{id}")
     public Result<Void> deleteById(@PathVariable Integer id) {
-        boolean success = deviceService.deleteById(id);
-
-        if (!success) {
-            return Result.fail("Device not found");
-        }
-
+        deviceService.deleteById(id);
         return Result.success();
     }
 }

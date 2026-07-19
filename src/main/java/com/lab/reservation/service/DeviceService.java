@@ -1,6 +1,8 @@
 package com.lab.reservation.service;
 
+import com.lab.reservation.dto.DeviceRequest;
 import com.lab.reservation.entity.Device;
+import com.lab.reservation.exception.BusinessException;
 import com.lab.reservation.mapper.DeviceMapper;
 import org.springframework.stereotype.Service;
 
@@ -19,33 +21,73 @@ public class DeviceService {
     }
 
     public Device findById(Integer id) {
-        return deviceMapper.findById(id);
+        Device device = deviceMapper.findById(id);
+
+        if (device == null) {
+            throw new BusinessException("Device not found");
+        }
+
+        return device;
     }
 
-    public Device add(Device device) {
+    public Device add(DeviceRequest request) {
+        validateDeviceRequest(request);
+
+        Device device = new Device();
+        device.setName(request.getName());
+        device.setType(request.getType());
+        device.setStatus(request.getStatus());
+
         deviceMapper.insert(device);
         return device;
     }
 
-    public Device update(Integer id, Device device) {
+    public Device update(Integer id, DeviceRequest request) {
         Device oldDevice = deviceMapper.findById(id);
 
         if (oldDevice == null) {
-            return null;
+            throw new BusinessException("Device not found");
         }
 
+        validateDeviceRequest(request);
+
+        Device device = new Device();
         device.setId(id);
+        device.setName(request.getName());
+        device.setType(request.getType());
+        device.setStatus(request.getStatus());
+
         deviceMapper.update(device);
         return deviceMapper.findById(id);
     }
 
-    public boolean deleteById(Integer id) {
+    public void deleteById(Integer id) {
         Device oldDevice = deviceMapper.findById(id);
 
         if (oldDevice == null) {
-            return false;
+            throw new BusinessException("Device not found");
         }
 
-        return deviceMapper.deleteById(id) > 0;
+        deviceMapper.deleteById(id);
+    }
+
+    private void validateDeviceRequest(DeviceRequest request) {
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new BusinessException("Device name is required");
+        }
+
+        if (request.getType() == null || request.getType().isBlank()) {
+            throw new BusinessException("Device type is required");
+        }
+
+        if (request.getStatus() == null || request.getStatus().isBlank()) {
+            throw new BusinessException("Device status is required");
+        }
+
+        if (!"Available".equals(request.getStatus())
+                && !"Maintenance".equals(request.getStatus())
+                && !"Disabled".equals(request.getStatus())) {
+            throw new BusinessException("Invalid device status");
+        }
     }
 }
