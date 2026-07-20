@@ -25,9 +25,28 @@ public interface DeviceMapper {
                 AND status = #{status}
             </if>
             ORDER BY id
+            LIMIT #{size} OFFSET #{offset}
             </script>
             """)
-    List<Device> search(@Param("keyword") String keyword, @Param("status") String status);
+    List<Device> search(@Param("keyword") String keyword,
+                        @Param("status") String status,
+                        @Param("offset") int offset,
+                        @Param("size") int size);
+
+    @Select("""
+            <script>
+            SELECT COUNT(*)
+            FROM device
+            WHERE 1 = 1
+            <if test="keyword != null and keyword != ''">
+                AND (name LIKE CONCAT('%', #{keyword}, '%') OR type LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            </script>
+            """)
+    long count(@Param("keyword") String keyword, @Param("status") String status);
 
     @Select("SELECT id, name, type, status FROM device WHERE id = #{id}")
     Device findById(Integer id);

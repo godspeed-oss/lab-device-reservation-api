@@ -1,6 +1,7 @@
 package com.lab.reservation.controller;
 
 import com.lab.reservation.common.Result;
+import com.lab.reservation.dto.PageResult;
 import com.lab.reservation.dto.ReservationRequest;
 import com.lab.reservation.dto.ReservationResponse;
 import com.lab.reservation.entity.Reservation;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @RestController
 public class ReservationController {
@@ -26,10 +26,12 @@ public class ReservationController {
     }
 
     @GetMapping("/reservations")
-    public Result<List<ReservationResponse>> search(
+    public Result<PageResult<ReservationResponse>> search(
             @RequestParam(required = false) Integer deviceId,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
-        return Result.success(reservationService.search(deviceId, date));
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return Result.success(reservationService.search(deviceId, date, page, size));
     }
 
     @GetMapping("/reservations/{id}")

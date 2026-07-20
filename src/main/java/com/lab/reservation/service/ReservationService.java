@@ -1,5 +1,6 @@
 package com.lab.reservation.service;
 
+import com.lab.reservation.dto.PageResult;
 import com.lab.reservation.dto.ReservationRequest;
 import com.lab.reservation.dto.ReservationResponse;
 import com.lab.reservation.entity.Device;
@@ -8,6 +9,7 @@ import com.lab.reservation.exception.BusinessException;
 import com.lab.reservation.mapper.DeviceMapper;
 import com.lab.reservation.mapper.ReservationMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -22,8 +24,15 @@ public class ReservationService {
         this.deviceMapper = deviceMapper;
     }
 
-    public List<ReservationResponse> search(Integer deviceId, LocalDate date) {
-        return reservationMapper.searchWithDevice(deviceId, date);
+    public PageResult<ReservationResponse> search(Integer deviceId, LocalDate date, Integer page, Integer size) {
+        int safePage = page == null || page < 1 ? 1 : page;
+        int safeSize = size == null || size < 1 ? 10 : size;
+        int offset = (safePage - 1) * safeSize;
+
+        List<ReservationResponse> items = reservationMapper.searchWithDevice(deviceId, date, offset, safeSize);
+        long total = reservationMapper.countWithDevice(deviceId, date);
+
+        return new PageResult<>(items, total, safePage, safeSize);
     }
 
     public ReservationResponse findById(Integer id) {
@@ -36,6 +45,7 @@ public class ReservationService {
         return reservation;
     }
 
+    @Transactional
     public Reservation add(ReservationRequest request) {
         validateReservationRequest(request);
 
@@ -66,6 +76,7 @@ public class ReservationService {
         return reservation;
     }
 
+    @Transactional
     public void deleteById(Integer id) {
         Reservation oldReservation = reservationMapper.findById(id);
 

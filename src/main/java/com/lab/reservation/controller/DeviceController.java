@@ -2,6 +2,7 @@ package com.lab.reservation.controller;
 
 import com.lab.reservation.common.Result;
 import com.lab.reservation.dto.DeviceRequest;
+import com.lab.reservation.dto.PageResult;
 import com.lab.reservation.entity.Device;
 import com.lab.reservation.service.DeviceService;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,8 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 public class DeviceController {
     private final DeviceService deviceService;
@@ -24,10 +23,12 @@ public class DeviceController {
     }
 
     @GetMapping("/devices")
-    public Result<List<Device>> search(
+    public Result<PageResult<Device>> search(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String status) {
-        return Result.success(deviceService.search(keyword, status));
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        return Result.success(deviceService.search(keyword, status, page, size));
     }
 
     @GetMapping("/devices/{id}")

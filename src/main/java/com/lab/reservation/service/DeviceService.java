@@ -1,23 +1,35 @@
 package com.lab.reservation.service;
 
 import com.lab.reservation.dto.DeviceRequest;
+import com.lab.reservation.dto.PageResult;
 import com.lab.reservation.entity.Device;
 import com.lab.reservation.exception.BusinessException;
 import com.lab.reservation.mapper.DeviceMapper;
+import com.lab.reservation.mapper.ReservationMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 public class DeviceService {
     private final DeviceMapper deviceMapper;
+    private final ReservationMapper reservationMapper;
 
-    public DeviceService(DeviceMapper deviceMapper) {
+    public DeviceService(DeviceMapper deviceMapper, ReservationMapper reservationMapper) {
         this.deviceMapper = deviceMapper;
+        this.reservationMapper = reservationMapper;
     }
 
-    public List<Device> search(String keyword, String status) {
-        return deviceMapper.search(keyword, status);
+    public PageResult<Device> search(String keyword, String status, Integer page, Integer size) {
+        int safePage = page == null || page < 1 ? 1 : page;
+        int safeSize = size == null || size < 1 ? 10 : size;
+        int offset = (safePage - 1) * safeSize;
+
+        List<Device> items = deviceMapper.search(keyword, status, offset, safeSize);
+        long total = deviceMapper.count(keyword, status);
+
+        return new PageResult<>(items, total, safePage, safeSize);
     }
 
     public Device findById(Integer id) {
@@ -30,6 +42,7 @@ public class DeviceService {
         return device;
     }
 
+    @Transactional
     public Device add(DeviceRequest request) {
         validateDeviceRequest(request);
 
@@ -42,6 +55,7 @@ public class DeviceService {
         return device;
     }
 
+    @Transactional
     public Device update(Integer id, DeviceRequest request) {
         Device oldDevice = deviceMapper.findById(id);
 
@@ -61,11 +75,18 @@ public class DeviceService {
         return deviceMapper.findById(id);
     }
 
+    @Transactional
     public void deleteById(Integer id) {
         Device oldDevice = deviceMapper.findById(id);
 
         if (oldDevice == null) {
             throw new BusinessException("Device not found");
+        }
+
+        long reservationCount = reservationMapper.countByDeviceId(id);
+
+        if (reservationCount > 0) {
+            throw new BusinessException("Device has reservations and cannot be deleted");
         }
 
         deviceMapper.deleteById(id);

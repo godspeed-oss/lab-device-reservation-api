@@ -35,9 +35,29 @@ public interface ReservationMapper {
                 AND r.reservation_date = #{date}
             </if>
             ORDER BY r.id
+            LIMIT #{size} OFFSET #{offset}
             </script>
             """)
-    List<ReservationResponse> searchWithDevice(@Param("deviceId") Integer deviceId, @Param("date") LocalDate date);
+    List<ReservationResponse> searchWithDevice(@Param("deviceId") Integer deviceId,
+                                               @Param("date") LocalDate date,
+                                               @Param("offset") int offset,
+                                               @Param("size") int size);
+
+    @Select("""
+            <script>
+            SELECT COUNT(*)
+            FROM reservation r
+            JOIN device d ON r.device_id = d.id
+            WHERE 1 = 1
+            <if test="deviceId != null">
+                AND r.device_id = #{deviceId}
+            </if>
+            <if test="date != null">
+                AND r.reservation_date = #{date}
+            </if>
+            </script>
+            """)
+    long countWithDevice(@Param("deviceId") Integer deviceId, @Param("date") LocalDate date);
 
     @Select("""
             SELECT
@@ -57,6 +77,9 @@ public interface ReservationMapper {
 
     @Select("SELECT id, device_id, user_name, reservation_date, start_time, end_time FROM reservation WHERE id = #{id}")
     Reservation findById(Integer id);
+
+    @Select("SELECT COUNT(*) FROM reservation WHERE device_id = #{deviceId}")
+    long countByDeviceId(Integer deviceId);
 
     @Select("SELECT COUNT(*) FROM reservation WHERE device_id = #{deviceId} AND reservation_date = #{reservationDate} AND start_time < #{endTime} AND end_time > #{startTime}")
     int countTimeConflict(Reservation reservation);
