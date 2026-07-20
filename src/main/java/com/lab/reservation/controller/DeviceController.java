@@ -5,14 +5,8 @@ import com.lab.reservation.dto.DeviceRequest;
 import com.lab.reservation.dto.PageResult;
 import com.lab.reservation.entity.Device;
 import com.lab.reservation.service.DeviceService;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class DeviceController {
@@ -37,12 +31,12 @@ public class DeviceController {
     }
 
     @PostMapping("/devices")
-    public Result<Device> add(@RequestBody DeviceRequest request) {
+    public Result<Device> add(@Valid @RequestBody DeviceRequest request) {
         return Result.success(deviceService.add(request));
     }
 
     @PutMapping("/devices/{id}")
-    public Result<Device> update(@PathVariable Integer id, @RequestBody DeviceRequest request) {
+    public Result<Device> update(@PathVariable Integer id, @Valid @RequestBody DeviceRequest request) {
         return Result.success(deviceService.update(id, request));
     }
 
