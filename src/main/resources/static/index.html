@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Lab Device Reservation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page">
+    <header class="header">
+        <div>
+            <h1>Lab Device Reservation</h1>
+            <p>Laboratory device and reservation management dashboard</p>
+        </div>
+        <div class="header-actions">
+            <button onclick="loadDevices()">Refresh Devices</button>
+            <button onclick="loadReservations()">Refresh Reservations</button>
+        </div>
+    </header>
+
+    <p id="message"></p>
+
+    <section class="grid">
+        <div class="panel">
+            <h2 id="deviceFormTitle">Add Device</h2>
+
+            <div class="form-column">
+                <input id="editingDeviceId" type="hidden">
+                <input id="deviceName" placeholder="Device name">
+                <input id="deviceType" placeholder="Device type">
+                <select id="deviceStatus">
+                    <option value="Available">Available</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Disabled">Disabled</option>
+                </select>
+                <div class="button-row">
+                    <button onclick="saveDevice()">Save Device</button>
+                    <button class="secondary" onclick="resetDeviceForm()">Cancel Edit</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Add Reservation</h2>
+
+            <div class="form-column">
+                <input id="reservationDeviceId" placeholder="Device ID">
+                <input id="reservationUserName" placeholder="User name">
+                <input id="reservationDate" type="date">
+                <input id="reservationStartTime" type="time">
+                <input id="reservationEndTime" type="time">
+                <button onclick="addReservation()">Add Reservation</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Search Devices</h2>
+
+        <div class="form-row">
+            <input id="keyword" placeholder="Keyword">
+            <select id="statusFilter">
+                <option value="">All Status</option>
+                <option value="Available">Available</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Disabled">Disabled</option>
+            </select>
+            <button onclick="loadDevices()">Search</button>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Device List</h2>
+
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="deviceTableBody">
+            </tbody>
+        </table>
+    </section>
+
+    <section class="panel">
+        <h2>Reservation List</h2>
+
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Device ID</th>
+                <th>User</th>
+                <th>Date</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="reservationTableBody">
+            </tbody>
+        </table>
+    </section>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
