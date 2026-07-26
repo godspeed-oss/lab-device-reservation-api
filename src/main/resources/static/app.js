@@ -1,11 +1,134 @@
 const API_BASE = "http://localhost:8080";
 
+let currentUser = null;
+let token = null;
+
 window.onload = function () {
-    loadDevices();
-    loadReservations();
+    restoreLoginState();
 };
 
+function restoreLoginState() {
+    const savedToken = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("currentUser");
+
+    if (savedToken && savedUser) {
+        token = savedToken;
+        currentUser = JSON.parse(savedUser);
+        updateLoginView();
+        loadDevices();
+        loadReservations();
+        return;
+    }
+
+    updateLoginView();
+    showMessage("Please login first.", "info");
+}
+
+async function login() {
+    const username = document.getElementById("loginUsername").value.trim();
+    const password = document.getElementById("loginPassword").value.trim();
+
+    const requestBody = {
+        username: username,
+        password: password
+    };
+
+    try {
+        const response = await fetch(`${API_BASE}/auth/login`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        const result = await response.json();
+
+        if (result.code !== 200) {
+            showMessage(result.message, "error");
+            return;
+        }
+
+        token = result.data.token;
+        currentUser = {
+            userId: result.data.userId,
+            username: result.data.username,
+            role: result.data.role
+        };
+
+        localStorage.setItem("token", token);
+        localStorage.setItem("currentUser", JSON.stringify(currentUser));
+
+        updateLoginView();
+        loadDevices();
+        loadReservations();
+
+        showMessage("Login successfully.", "success");
+    } catch (error) {
+        showMessage("Login failed.", "error");
+    }
+}
+
+function logout() {
+    token = null;
+    currentUser = null;
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("currentUser");
+
+    document.getElementById("deviceTableBody").innerHTML = "";
+    document.getElementById("reservationTableBody").innerHTML = "";
+
+    updateLoginView();
+    showMessage("Logged out.", "info");
+}
+
+function updateLoginView() {
+    const isLoggedIn = token !== null && currentUser !== null;
+    const isAdmin = isLoggedIn && currentUser.role === "ADMIN";
+
+    document.getElementById("loginPanel").classList.toggle("hidden", isLoggedIn);
+    document.getElementById("userPanel").classList.toggle("hidden", !isLoggedIn);
+
+    if (isLoggedIn) {
+        document.getElementById("currentUsername").innerText = currentUser.username;
+        document.getElementById("currentRole").innerText = currentUser.role;
+    }
+
+    const adminElements = document.querySelectorAll(".admin-only");
+
+    for (const element of adminElements) {
+        element.classList.toggle("hidden", !isAdmin);
+    }
+}
+
+function getAuthHeaders() {
+    return {
+        "Authorization": token
+    };
+}
+
+function getJsonHeaders() {
+    return {
+        "Content-Type": "application/json",
+        "Authorization": token
+    };
+}
+
+function ensureLoggedIn() {
+    if (token === null) {
+        showMessage("Please login first.", "error");
+        return false;
+    }
+
+    return true;
+}
+
 async function loadDevices() {
+    if (!ensureLoggedIn()) {
+        return;
+    }
+
     const keyword = document.getElementById("keyword").value.trim();
     const status = document.getElementById("statusFilter").value;
 
@@ -20,7 +143,10 @@ async function loadDevices() {
     }
 
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: getAuthHeaders()
+        });
+
         const result = await response.json();
 
         if (result.code !== 200) {
@@ -36,6 +162,10 @@ async function loadDevices() {
 }
 
 async function saveDevice() {
+    if (!ensureLoggedIn()) {
+        return;
+    }
+
     const editingDeviceId = document.getElementById("editingDeviceId").value;
     const name = document.getElementById("deviceName").value.trim();
     const type = document.getElementById("deviceType").value.trim();
@@ -57,9 +187,7 @@ async function saveDevice() {
     try {
         const response = await fetch(url, {
             method: method,
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: getJsonHeaders(),
             body: JSON.stringify(requestBody)
         });
 
@@ -96,6 +224,10 @@ function resetDeviceForm() {
 }
 
 async function deleteDevice(id) {
+    if (!ensureLoggedIn()) {
+        return;
+    }
+
     const confirmed = confirm(`Delete device #${id}?`);
 
     if (!confirmed) {
@@ -104,7 +236,8 @@ async function deleteDevice(id) {
 
     try {
         const response = await fetch(`${API_BASE}/devices/${id}`, {
-            method: "DELETE"
+            method: "DELETE",
+            headers: getAuthHeaders()
         });
 
         const result = await response.json();
@@ -122,10 +255,17 @@ async function deleteDevice(id) {
 }
 
 async function loadReservations() {
+    if (!ensureLoggedIn()) {
+        return;
+    }
+
     const url = `${API_BASE}/reservations?page=1&size=20`;
 
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: getAuthHeaders()
+        });
+
         const result = await response.json();
 
         if (result.code !== 200) {
@@ -141,6 +281,10 @@ async function loadReservations() {
 }
 
 async function addReservation() {
+    if (!ensureLoggedIn()) {
+        return;
+    }
+
     const deviceId = Number(document.getElementById("reservationDeviceId").value);
     const userName = document.getElementById("reservationUserName").value.trim();
     const reservationDate = document.getElementById("reservationDate").value;
@@ -158,9 +302,7 @@ async function addReservation() {
     try {
         const response = await fetch(`${API_BASE}/reservations`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: getJsonHeaders(),
             body: JSON.stringify(requestBody)
         });
 
@@ -185,6 +327,10 @@ async function addReservation() {
 }
 
 async function deleteReservation(id) {
+    if (!ensureLoggedIn()) {
+        return;
+    }
+
     const confirmed = confirm(`Delete reservation #${id}?`);
 
     if (!confirmed) {
@@ -193,7 +339,8 @@ async function deleteReservation(id) {
 
     try {
         const response = await fetch(`${API_BASE}/reservations/${id}`, {
-            method: "DELETE"
+            method: "DELETE",
+            headers: getAuthHeaders()
         });
 
         const result = await response.json();
@@ -214,18 +361,26 @@ function renderDeviceTable(devices) {
     const tableBody = document.getElementById("deviceTableBody");
     tableBody.innerHTML = "";
 
+    const isAdmin = currentUser !== null && currentUser.role === "ADMIN";
+
     for (const device of devices) {
         const row = document.createElement("tr");
+
+        const actionColumn = isAdmin
+            ? `
+                <td>
+                    <button class="secondary" onclick="editDevice(${device.id}, '${escapeText(device.name)}', '${escapeText(device.type)}', '${escapeText(device.status)}')">Edit</button>
+                    <button class="danger" onclick="deleteDevice(${device.id})">Delete</button>
+                </td>
+            `
+            : "";
 
         row.innerHTML = `
             <td>${device.id}</td>
             <td>${device.name}</td>
             <td>${device.type}</td>
             <td><span class="status ${device.status}">${device.status}</span></td>
-            <td>
-                <button class="secondary" onclick="editDevice(${device.id}, '${escapeText(device.name)}', '${escapeText(device.type)}', '${escapeText(device.status)}')">Edit</button>
-                <button class="danger" onclick="deleteDevice(${device.id})">Delete</button>
-            </td>
+            ${actionColumn}
         `;
 
         tableBody.appendChild(row);

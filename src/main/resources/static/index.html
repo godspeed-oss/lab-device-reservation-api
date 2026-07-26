@@ -18,10 +18,32 @@
         </div>
     </header>
 
+    <section class="panel" id="loginPanel">
+        <h2>Login</h2>
+
+        <div class="form-row">
+            <input id="loginUsername" placeholder="Username" value="admin">
+            <input id="loginPassword" type="password" placeholder="Password" value="123456">
+            <button onclick="login()">Login</button>
+        </div>
+
+        <p class="hint">Test accounts: admin / 123456, student / 123456</p>
+    </section>
+
+    <section class="panel hidden" id="userPanel">
+        <div class="user-bar">
+            <div>
+                <strong id="currentUsername"></strong>
+                <span id="currentRole"></span>
+            </div>
+            <button class="secondary" onclick="logout()">Logout</button>
+        </div>
+    </section>
+
     <p id="message"></p>
 
     <section class="grid">
-        <div class="panel">
+        <div class="panel admin-only">
             <h2 id="deviceFormTitle">Add Device</h2>
 
             <div class="form-column">
@@ -79,7 +101,7 @@
                 <th>Name</th>
                 <th>Type</th>
                 <th>Status</th>
-                <th>Action</th>
+                <th class="admin-only">Action</th>
             </tr>
             </thead>
             <tbody id="deviceTableBody">

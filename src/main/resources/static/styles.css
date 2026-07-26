@@ -72,6 +72,31 @@ body {
     gap: 10px;
 }
 
+.user-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#currentUsername {
+    margin-right: 12px;
+}
+
+#currentRole {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #e0f2fe;
+    color: #075985;
+    font-size: 13px;
+}
+
+.hint {
+    margin: 12px 0 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
 input,
 select {
     height: 38px;
@@ -155,6 +180,10 @@ th {
     color: #991b1b;
 }
 
+.hidden {
+    display: none !important;
+}
+
 #message {
     min-height: 22px;
     margin: 0 0 20px;
@@ -194,6 +223,12 @@ th {
 
     .button-row {
         flex-direction: column;
+    }
+
+    .user-bar {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
     }
 
     table {
