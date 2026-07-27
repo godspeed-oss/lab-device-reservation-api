@@ -5,6 +5,7 @@ import com.lab.reservation.dto.LoginResponse;
 import com.lab.reservation.entity.User;
 import com.lab.reservation.exception.BusinessException;
 import com.lab.reservation.mapper.UserMapper;
+import com.lab.reservation.util.PasswordUtil;
 import com.lab.reservation.util.TokenUtil;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +24,7 @@ public class AuthService {
             throw new BusinessException("Username or password is incorrect");
         }
 
-        if (!user.getPassword().equals(request.getPassword())) {
+        if (!PasswordUtil.matches(request.getPassword(), user.getPassword())) {
             throw new BusinessException("Username or password is incorrect");
         }
 
