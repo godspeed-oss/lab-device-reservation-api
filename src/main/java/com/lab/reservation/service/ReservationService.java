@@ -1,15 +1,14 @@
 package com.lab.reservation.service;
 
+import com.lab.reservation.dto.CurrentUser;
 import com.lab.reservation.dto.PageResult;
 import com.lab.reservation.dto.ReservationRequest;
 import com.lab.reservation.dto.ReservationResponse;
 import com.lab.reservation.entity.Device;
 import com.lab.reservation.entity.Reservation;
 import com.lab.reservation.exception.BusinessException;
-import com.lab.reservation.mapper.DeviceMapper;
 import com.lab.reservation.mapper.ReservationMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,99 +16,120 @@ import java.util.List;
 @Service
 public class ReservationService {
     private final ReservationMapper reservationMapper;
-    private final DeviceMapper deviceMapper;
+    private final DeviceService deviceService;
 
-    public ReservationService(ReservationMapper reservationMapper, DeviceMapper deviceMapper) {
+    public ReservationService(ReservationMapper reservationMapper, DeviceService deviceService) {
         this.reservationMapper = reservationMapper;
-        this.deviceMapper = deviceMapper;
+        this.deviceService = deviceService;
     }
 
-    public PageResult<ReservationResponse> search(Integer deviceId, LocalDate date, Integer page, Integer size) {
-        int safePage = page == null || page < 1 ? 1 : page;
-        int safeSize = size == null || size < 1 ? 10 : size;
-        int offset = (safePage - 1) * safeSize;
+    public PageResult<ReservationResponse> search(
+            Integer deviceId,
+            LocalDate reservationDate,
+            Integer page,
+            Integer size,
+            CurrentUser currentUser
+    ) {
+        int currentPage = page == null || page < 1 ? 1 : page;
+        int pageSize = size == null || size < 1 ? 10 : size;
+        int offset = (currentPage - 1) * pageSize;
 
-        List<ReservationResponse> items = reservationMapper.searchWithDevice(deviceId, date, offset, safeSize);
-        long total = reservationMapper.countWithDevice(deviceId, date);
+        Integer queryUserId = "ADMIN".equals(currentUser.getRole())
+                ? null
+                : currentUser.getUserId();
 
-        return new PageResult<>(items, total, safePage, safeSize);
+        List<ReservationResponse> items = reservationMapper.search(
+                deviceId,
+                reservationDate,
+                queryUserId,
+                offset,
+                pageSize
+        );
+
+        long total = reservationMapper.count(deviceId, reservationDate, queryUserId);
+
+        return new PageResult<>(items, total, currentPage, pageSize);
     }
 
-    public ReservationResponse findById(Integer id) {
-        ReservationResponse reservation = reservationMapper.findByIdWithDevice(id);
+    public ReservationResponse findById(Integer id, CurrentUser currentUser) {
+        ReservationResponse reservation = reservationMapper.findById(id);
 
         if (reservation == null) {
             throw new BusinessException("Reservation not found");
         }
 
+        checkReservationOwner(reservation.getUserId(), currentUser);
+
         return reservation;
     }
 
-    @Transactional
-    public Reservation add(ReservationRequest request) {
-        validateReservationRequest(request);
-
-        Device device = deviceMapper.findById(request.getDeviceId());
-
-        if (device == null) {
-            throw new BusinessException("Device not found");
-        }
+    public Reservation add(ReservationRequest request, CurrentUser currentUser) {
+        Device device = deviceService.findById(request.getDeviceId());
 
         if (!"Available".equals(device.getStatus())) {
             throw new BusinessException("Device is not available");
         }
 
+        boolean conflict = hasTimeConflict(
+                request.getDeviceId(),
+                request.getReservationDate(),
+                request.getStartTime(),
+                request.getEndTime(),
+                0
+        );
+
+        if (conflict) {
+            throw new BusinessException("Reservation time conflict");
+        }
+
         Reservation reservation = new Reservation();
         reservation.setDeviceId(request.getDeviceId());
-        reservation.setUserName(request.getUserName());
+        reservation.setUserId(currentUser.getUserId());
+        reservation.setUserName(currentUser.getUsername());
         reservation.setReservationDate(request.getReservationDate());
         reservation.setStartTime(request.getStartTime());
         reservation.setEndTime(request.getEndTime());
 
-        int conflictCount = reservationMapper.countTimeConflict(reservation);
-
-        if (conflictCount > 0) {
-            throw new BusinessException("Reservation time conflict");
-        }
-
         reservationMapper.insert(reservation);
+
         return reservation;
     }
 
-    @Transactional
-    public void deleteById(Integer id) {
-        Reservation oldReservation = reservationMapper.findById(id);
+    public void deleteById(Integer id, CurrentUser currentUser) {
+        Reservation reservation = reservationMapper.findEntityById(id);
 
-        if (oldReservation == null) {
+        if (reservation == null) {
             throw new BusinessException("Reservation not found");
         }
+
+        checkReservationOwner(reservation.getUserId(), currentUser);
 
         reservationMapper.deleteById(id);
     }
 
-    private void validateReservationRequest(ReservationRequest request) {
-        if (request.getDeviceId() == null) {
-            throw new BusinessException("Device id is required");
+    private boolean hasTimeConflict(
+            Integer deviceId,
+            LocalDate reservationDate,
+            java.time.LocalTime startTime,
+            java.time.LocalTime endTime,
+            Integer excludeReservationId
+    ) {
+        return reservationMapper.countTimeConflict(
+                deviceId,
+                reservationDate,
+                startTime,
+                endTime,
+                excludeReservationId
+        ) > 0;
+    }
+
+    private void checkReservationOwner(Integer reservationUserId, CurrentUser currentUser) {
+        if ("ADMIN".equals(currentUser.getRole())) {
+            return;
         }
 
-        if (request.getUserName() == null || request.getUserName().isBlank()) {
-            throw new BusinessException("User name is required");
-        }
-
-        if (request.getReservationDate() == null) {
-            throw new BusinessException("Reservation date is required");
-        }
-
-        if (request.getStartTime() == null) {
-            throw new BusinessException("Start time is required");
-        }
-
-        if (request.getEndTime() == null) {
-            throw new BusinessException("End time is required");
-        }
-
-        if (!request.getStartTime().isBefore(request.getEndTime())) {
-            throw new BusinessException("Start time must be before end time");
+        if (!currentUser.getUserId().equals(reservationUserId)) {
+            throw new BusinessException("No permission to access this reservation");
         }
     }
 }

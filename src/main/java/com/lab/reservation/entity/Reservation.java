@@ -9,6 +9,7 @@ import java.time.LocalTime;
 public class Reservation {
     private Integer id;
     private Integer deviceId;
+    private Integer userId;
     private String userName;
     private LocalDate reservationDate;
     private LocalTime startTime;

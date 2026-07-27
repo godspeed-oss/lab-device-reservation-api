@@ -10,7 +10,7 @@ public class ReservationResponse {
     private Integer id;
     private Integer deviceId;
     private String deviceName;
-    private String deviceType;
+    private Integer userId;
     private String userName;
     private LocalDate reservationDate;
     private LocalTime startTime;
